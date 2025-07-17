@@ -6,11 +6,11 @@ pipeline {
         
         DOCKER_IMAGE_NAME = "croazt/simple-java-maven-app" 
 
-        APP_ENVIRONMENT = "" 
-        APP_API_URL = ""     
-        APP_DB_HOST = ""     
+        // APP_ENVIRONMENT = "" 
+        // APP_API_URL = ""     
+        // APP_DB_HOST = ""     
         
-        NGINX_EXTERNAL_PORT = ""
+        NGINX_EXTERNAL_PORT = "80"
     }
 
     stages {
