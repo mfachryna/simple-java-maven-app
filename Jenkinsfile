@@ -70,7 +70,7 @@ pipeline {
         stage('Run Unit Tests (if any)') {
             agent {
                 docker {
-                    image 'maven:3.9.6-eclipse-temurin-17-alpine' // <--- Make sure this is still correct for your architecture
+                    image 'maven:3.9.10-eclipse-temurin-17-noble'
                     args '-u root'
                 }
             }
