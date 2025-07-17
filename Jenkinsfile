@@ -40,29 +40,40 @@ pipeline {
             }
         }
 
-        stage('Build Java App & Docker Image') {
+        stage('Build Java App') {
             agent {
                 docker {
-                    image 'maven:3.9.10-eclipse-temurin-17-noble' // Your chosen Maven image
+                    image 'maven:3.9.10-eclipse-temurin-17-noble'
                     args '-u root'
                 }
             }
             steps {
-                script {
-                    def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
-                    echo "Building Java app and Docker image: ${imageNameWithTag}"
+                echo "Starting Maven clean and package..."
+                sh "mvn clean package -DskipTests -X"
+                
+                echo "Maven build completed. Checking for JAR file..."
+                sh "find . -name '*.jar' -type f -exec ls -la {} +"
+                
+                echo "Contents of target directory:"
+                sh "ls -la target/ || echo 'Target directory not found'"
+                
+                // Stash the built artifacts for use in next stage
+                stash includes: 'target/*.jar, Dockerfile, pom.xml, src/**', name: 'built-app'
+            }
+        }
 
-                    echo "Starting Maven clean and package..."
-                    sh "mvn clean package -DskipTests -X"
+        stage('Build Docker Image') {
+            agent any
+            steps {
+                script {
+                    // Unstash the built artifacts
+                    unstash 'built-app'
                     
-                    echo "Maven build completed. Checking for JAR file..."
-                    sh "find . -name '*.jar' -type f -exec ls -la {} +"
-                    
-                    echo "Contents of target directory:"
-                    sh "ls -la target/ || echo 'Target directory not found'"
+                    def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
+                    echo "Building Docker image: ${imageNameWithTag}"
 
                     echo "Building Docker image..."
-                    docker.build(imageNameWithTag) 
+                    docker.build(imageNameWithTag)
 
                     echo "Docker image built successfully: ${imageNameWithTag}"
                 }
