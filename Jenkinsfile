@@ -17,7 +17,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 
-                git credentialsId: 'github-usn', branch: env.BRANCH_NAME, url: 'https://github.com/mfachryna/simple-java-maven-app'
+                git credentialsId: 'github-usn', branch: env.BRANCH_NAME, url: 'https://github.com/mfachryna/simple-java-maven-app.git'
             }
         }
 
