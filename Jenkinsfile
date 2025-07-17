@@ -3,39 +3,12 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_NAME = "croazt/simple-java-maven-app"
-        NGINX_EXTERNAL_PORT = "80"
     }
-
-    def appConfig
 
     stages {
         stage('Checkout') {
             steps {
                 git credentialsId: 'github-usn', branch: env.BRANCH_NAME, url: 'https://github.com/mfachryna/simple-java-maven-app.git'
-            }
-        }
-
-        stage('Load Environment Configuration') {
-            steps {
-                script {
-                    def envConfigFile
-                    if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master') {
-                        envConfigFile = 'configs/production.json'
-                        echo "Loading production configuration from ${envConfigFile}"
-                    } else {
-                        envConfigFile = 'configs/development.json'
-                        echo "Loading development configuration from ${envConfigFile}"
-                    }
-
-                    appConfig = readJSON file: envConfigFile
-                
-                    env.APP_ENVIRONMENT = appConfig.APP_ENVIRONMENT
-                    env.APP_API_URL = appConfig.APP_API_URL
-                
-                    env.APP_DB_HOST = appConfig.APP_DB_HOST
-
-                    echo "Config loaded: APP_ENVIRONMENT=${env.APP_ENVIRONMENT}, APP_API_URL=${env.APP_API_URL}, APP_DB_HOST=${env.APP_DB_HOST}"
-                }
             }
         }
 
@@ -71,13 +44,14 @@ pipeline {
 
                     echo "Deploying ${imageNameWithTag} to its local environment (Container: ${targetContainerName})"
 
+                    // Variables are directly available as env.VAR_NAME from docker-compose
                     def dockerRunCommand = "docker run -d " +
                                            "--name ${targetContainerName} " +
                                            "--network ${targetNetwork} " +
                                            "-e APP_ENV=${env.APP_ENVIRONMENT} " +
-                                           "-e API_URL=${env.APP_API_URL} " +    
-                                           "-e DB_HOST=${env.APP_DB_HOST} " +    
-                                           "-p ${env.NGINX_EXTERNAL_PORT}:${env.NGINX_EXTERNAL_PORT} " +
+                                           "-e API_URL=${env.APP_API_URL} " +
+                                           "-e DB_HOST=${env.APP_DB_HOST} " +
+                                           "-p ${env.NGINX_EXTERNAL_PORT}:${env.NGINX_EXTERNAL_PORT} " + // Use env.NGINX_EXTERNAL_PORT
                                            "${imageNameWithTag}"
 
                     sh dockerRunCommand
