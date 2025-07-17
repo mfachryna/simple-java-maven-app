@@ -1,5 +1,4 @@
 pipeline {
-    
     agent any
 
     environment {
@@ -42,22 +41,26 @@ pipeline {
         }
 
         stage('Build Java App & Docker Image') {
-            
             agent {
                 docker {
-                    image 'maven:3.9.10-eclipse-temurin-17-noble' 
-                    args '-u root' 
+                    image 'maven:3.9.6-eclipse-temurin-17-alpine' // <--- Make sure this is still correct for your architecture
+                    args '-u root'
                 }
             }
             steps {
                 script {
+                    // --- DIAGNOSTIC COMMANDS START ---
+                    echo "--- DIAGNOSTIC: CHECKING DOCKER CLI ---"
+                    sh 'which docker || echo "docker command not found in PATH"'
+                    sh 'ls -l /usr/bin/docker || echo "/usr/bin/docker does not exist"'
+                    sh 'echo $PATH'
+                    echo "-------------------------------------"
+                    // --- DIAGNOSTIC COMMANDS END ---
+
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
                     echo "Building Java app and Docker image: ${imageNameWithTag}"
 
-                    
                     sh "mvn clean package -DskipTests"
-                    
-                    
                     docker.build(imageNameWithTag)
                     echo "Docker image built successfully."
                 }
@@ -65,23 +68,21 @@ pipeline {
         }
 
         stage('Run Unit Tests (if any)') {
-            
             agent {
                 docker {
-                    image 'maven:3.9.6-eclipse-temurin-17-alpine'
+                    image 'maven:3.9.6-eclipse-temurin-17-alpine' // <--- Make sure this is still correct for your architecture
                     args '-u root'
                 }
             }
             steps {
                 echo "Running unit tests for Java..."
-                sh "mvn test" 
+                sh "mvn test"
                 echo "Unit tests completed."
             }
         }
 
         stage('Deploy Application') {
-            
-            agent any 
+            agent any
             steps {
                 script {
                     def targetContainerName = 'java-app'
