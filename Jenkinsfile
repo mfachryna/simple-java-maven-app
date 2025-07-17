@@ -3,9 +3,29 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_NAME = "croazt/simple-java-maven-app"
+
+        // Explicitly read variables from the shell environment that the Jenkins container provides.
+        // This makes them available as env.VAR_NAME within the pipeline.
+        APP_ENVIRONMENT = sh(returnStdout: true, script: 'echo $APP_ENVIRONMENT').trim()
+        APP_API_URL = sh(returnStdout: true, script: 'echo $APP_API_URL').trim()
+        APP_DB_HOST = sh(returnStdout: true, script: 'echo $APP_DB_HOST').trim()
+        NGINX_EXTERNAL_PORT = sh(returnStdout: true, script: 'echo $NGINX_EXTERNAL_PORT').trim()
     }
 
     stages {
+        stage('Verification of Environment Variables') {
+            steps {
+                script {
+                    echo "--- VERIFYING ENV VARS ---"
+                    echo "APP_ENVIRONMENT: ${env.APP_ENVIRONMENT}"
+                    echo "APP_API_URL: ${env.APP_API_URL}"
+                    echo "APP_DB_HOST: ${env.APP_DB_HOST}"
+                    echo "NGINX_EXTERNAL_PORT: ${env.NGINX_EXTERNAL_PORT}"
+                    echo "--------------------------"
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git credentialsId: 'github-usn', branch: env.BRANCH_NAME, url: 'https://github.com/mfachryna/simple-java-maven-app.git'
@@ -44,14 +64,13 @@ pipeline {
 
                     echo "Deploying ${imageNameWithTag} to its local environment (Container: ${targetContainerName})"
 
-                    // Variables are directly available as env.VAR_NAME from docker-compose
                     def dockerRunCommand = "docker run -d " +
                                            "--name ${targetContainerName} " +
                                            "--network ${targetNetwork} " +
                                            "-e APP_ENV=${env.APP_ENVIRONMENT} " +
                                            "-e API_URL=${env.APP_API_URL} " +
                                            "-e DB_HOST=${env.APP_DB_HOST} " +
-                                           "-p ${env.NGINX_EXTERNAL_PORT}:${env.NGINX_EXTERNAL_PORT} " + // Use env.NGINX_EXTERNAL_PORT
+                                           "-p ${env.NGINX_EXTERNAL_PORT}:${env.NGINX_EXTERNAL_PORT} " +
                                            "${imageNameWithTag}"
 
                     sh dockerRunCommand
