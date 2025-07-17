@@ -99,7 +99,7 @@ pipeline {
             steps {
                 script {
                     def targetContainerName = 'java-app'
-                    def targetNetwork = 'app-network'
+                    def targetNetwork = 'local-dev-server_app-network' 
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
 
                     echo "Attempting to stop and remove existing application container: ${targetContainerName}"
