@@ -43,7 +43,7 @@ pipeline {
         stage('Build Java App & Docker Image') {
             agent {
                 docker {
-                    image 'maven:3.9.6-eclipse-temurin-17-alpine' // Your chosen Maven image
+                    image 'maven:3.9.10-eclipse-temurin-17-noble' // Your chosen Maven image
                     args '-u root'
                 }
             }
