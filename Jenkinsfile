@@ -52,11 +52,19 @@ pipeline {
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
                     echo "Building Java app and Docker image: ${imageNameWithTag}"
 
-                    sh "mvn clean package -DskipTests"
+                    echo "Starting Maven clean and package..."
+                    sh "mvn clean package -DskipTests -X"
+                    
+                    echo "Maven build completed. Checking for JAR file..."
+                    sh "find . -name '*.jar' -type f -exec ls -la {} +"
+                    
+                    echo "Contents of target directory:"
+                    sh "ls -la target/ || echo 'Target directory not found'"
 
+                    echo "Building Docker image..."
                     docker.build(imageNameWithTag) 
 
-                    echo "Docker image built successfully."
+                    echo "Docker image built successfully: ${imageNameWithTag}"
                 }
             }
         }
@@ -108,13 +116,25 @@ pipeline {
 
     post {
         always {
+            script {
+                echo "Pipeline execution completed for branch ${env.BRANCH_NAME}"
+                echo "Build number: ${env.BUILD_NUMBER}"
+                
+                // List any remaining artifacts before cleanup
+                sh "echo 'Workspace contents before cleanup:'"
+                sh "ls -la || true"
+                sh "echo 'Target directory contents:'"
+                sh "ls -la target/ || true"
+            }
             cleanWs()
         }
         success {
-            echo "Pipeline completed successfully for branch ${env.BRANCH_NAME}!"
+            echo "✅ Pipeline completed successfully for branch ${env.BRANCH_NAME}!"
+            echo "Docker image: ${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
         }
         failure {
-            echo "Pipeline failed for branch ${env.BRANCH_NAME}!"
+            echo "❌ Pipeline failed for branch ${env.BRANCH_NAME}!"
+            echo "Check the logs above for detailed error information."
         }
     }
 }
