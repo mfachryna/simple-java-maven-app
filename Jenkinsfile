@@ -1,23 +1,41 @@
-
 pipeline {
     agent any
 
     environment {
-        
-        DOCKER_IMAGE_NAME = "croazt/simple-java-maven-app" 
-
-        // APP_ENVIRONMENT = "" 
-        // APP_API_URL = ""     
-        // APP_DB_HOST = ""     
-        
+        DOCKER_IMAGE_NAME = "croazt/simple-java-maven-app"
         NGINX_EXTERNAL_PORT = "80"
     }
+
+    def appConfig
 
     stages {
         stage('Checkout') {
             steps {
-                
                 git credentialsId: 'github-usn', branch: env.BRANCH_NAME, url: 'https://github.com/mfachryna/simple-java-maven-app.git'
+            }
+        }
+
+        stage('Load Environment Configuration') {
+            steps {
+                script {
+                    def envConfigFile
+                    if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master') {
+                        envConfigFile = 'configs/production.json'
+                        echo "Loading production configuration from ${envConfigFile}"
+                    } else {
+                        envConfigFile = 'configs/development.json'
+                        echo "Loading development configuration from ${envConfigFile}"
+                    }
+
+                    appConfig = readJSON file: envConfigFile
+                
+                    env.APP_ENVIRONMENT = appConfig.APP_ENVIRONMENT
+                    env.APP_API_URL = appConfig.APP_API_URL
+                
+                    env.APP_DB_HOST = appConfig.APP_DB_HOST
+
+                    echo "Config loaded: APP_ENVIRONMENT=${env.APP_ENVIRONMENT}, APP_API_URL=${env.APP_API_URL}, APP_DB_HOST=${env.APP_DB_HOST}"
+                }
             }
         }
 
@@ -26,8 +44,8 @@ pipeline {
                 script {
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
                     echo "Building Java app and Docker image: ${imageNameWithTag}"
-                    sh "mvn clean package -DskipTests" 
-                    docker.build(imageNameWithTag) 
+                    sh "mvn clean package -DskipTests"
+                    docker.build(imageNameWithTag)
                     echo "Docker image built successfully."
                 }
             }
@@ -36,8 +54,6 @@ pipeline {
         stage('Run Unit Tests (if any)') {
             steps {
                 echo "Running unit tests (simulated for Java)..."
-                
-                
                 echo "Unit tests completed."
             }
         }
@@ -45,28 +61,28 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 script {
-                    def targetContainerName = 'java-app' 
-                    def targetNetwork = 'app-network' 
+                    def targetContainerName = 'java-app'
+                    def targetNetwork = 'app-network'
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
 
                     echo "Attempting to stop and remove existing application container: ${targetContainerName}"
-                    sh "docker stop ${targetContainerName} || true" 
-                    sh "docker rm ${targetContainerName} || true" 
+                    sh "docker stop ${targetContainerName} || true"
+                    sh "docker rm ${targetContainerName} || true"
 
                     echo "Deploying ${imageNameWithTag} to its local environment (Container: ${targetContainerName})"
 
-                    
                     def dockerRunCommand = "docker run -d " +
                                            "--name ${targetContainerName} " +
-                                           "--network ${targetNetwork} " + 
-                                           "-e APP_ENV=${APP_ENVIRONMENT} " +
-                                           "-e API_URL=${APP_API_URL} " +
-                                           "-e DB_HOST=${APP_DB_HOST} " +
+                                           "--network ${targetNetwork} " +
+                                           "-e APP_ENV=${env.APP_ENVIRONMENT} " +
+                                           "-e API_URL=${env.APP_API_URL} " +    
+                                           "-e DB_HOST=${env.APP_DB_HOST} " +    
+                                           "-p ${env.NGINX_EXTERNAL_PORT}:${env.NGINX_EXTERNAL_PORT} " +
                                            "${imageNameWithTag}"
 
                     sh dockerRunCommand
                     echo "Successfully deployed application to its local environment."
-                    echo "Access your app via Nginx at: http://localhost:${NGINX_EXTERNAL_PORT}/"
+                    echo "Access your app via Nginx at: http://localhost:${env.NGINX_EXTERNAL_PORT}/"
                 }
             }
         }
