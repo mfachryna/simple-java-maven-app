@@ -1,27 +1,23 @@
-# my-java-app-repo/Jenkinsfile
+
 pipeline {
     agent any
 
     environment {
-        # Your Docker Hub username/org for image tagging
-        DOCKER_IMAGE_NAME = "your-github-username/my-java-app" # REPLACE THIS
+        
+        DOCKER_IMAGE_NAME = "croazt/simple-java-maven-app" 
 
-        # These environment variables will be injected into THIS Jenkins container
-        # by its parent docker-compose.yml file.
-        # They define the context (Dev or Staging) for this particular Jenkins instance.
         APP_ENVIRONMENT = "" 
         APP_API_URL = ""     
         APP_DB_HOST = ""     
-
-        # The Nginx port to access the app from your local machine, also injected from docker-compose.yml
+        
         NGINX_EXTERNAL_PORT = ""
     }
 
     stages {
         stage('Checkout') {
             steps {
-                # Ensure credentialsId and repository URL are correct for your GitHub repo
-                git credentialsId: 'github-pat', branch: env.BRANCH_NAME, url: 'https:
+                
+                git credentialsId: 'github-usn', branch: env.BRANCH_NAME, url: 'https://github.com/mfachryna/simple-java-maven-app'
             }
         }
 
@@ -30,8 +26,8 @@ pipeline {
                 script {
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
                     echo "Building Java app and Docker image: ${imageNameWithTag}"
-                    sh "mvn clean package -DskipTests" # Build the Java JAR
-                    docker.build(imageNameWithTag) # Build the Docker image
+                    sh "mvn clean package -DskipTests" 
+                    docker.build(imageNameWithTag) 
                     echo "Docker image built successfully."
                 }
             }
@@ -40,8 +36,8 @@ pipeline {
         stage('Run Unit Tests (if any)') {
             steps {
                 echo "Running unit tests (simulated for Java)..."
-                # For real Java unit tests, you'd run Maven test here:
-                # sh "mvn test"
+                
+                
                 echo "Unit tests completed."
             }
         }
@@ -49,20 +45,20 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 script {
-                    def targetContainerName = 'java-app' # Always target the 'java-app' service within THIS Docker Compose
-                    def targetNetwork = 'app-network' # The network defined in THIS Docker Compose
+                    def targetContainerName = 'java-app' 
+                    def targetNetwork = 'app-network' 
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
 
                     echo "Attempting to stop and remove existing application container: ${targetContainerName}"
-                    sh "docker stop ${targetContainerName} || true" # Stop if running
-                    sh "docker rm ${targetContainerName} || true" # Remove if exists
+                    sh "docker stop ${targetContainerName} || true" 
+                    sh "docker rm ${targetContainerName} || true" 
 
                     echo "Deploying ${imageNameWithTag} to its local environment (Container: ${targetContainerName})"
 
-                    # The docker run command now uses environment variables injected into THIS Jenkins instance
+                    
                     def dockerRunCommand = "docker run -d " +
                                            "--name ${targetContainerName} " +
-                                           "--network ${targetNetwork} " + # Connect to the correct network defined in THIS docker-compose.yml
+                                           "--network ${targetNetwork} " + 
                                            "-e APP_ENV=${APP_ENVIRONMENT} " +
                                            "-e API_URL=${APP_API_URL} " +
                                            "-e DB_HOST=${APP_DB_HOST} " +
@@ -70,7 +66,7 @@ pipeline {
 
                     sh dockerRunCommand
                     echo "Successfully deployed application to its local environment."
-                    echo "Access your app via Nginx at: http:
+                    echo "Access your app via Nginx at: http://localhost:${NGINX_EXTERNAL_PORT}/"
                 }
             }
         }
