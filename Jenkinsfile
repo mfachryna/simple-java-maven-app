@@ -99,7 +99,7 @@ pipeline {
             steps {
                 script {
                     def targetContainerName = 'java-app'
-                    def targetNetwork = 'local-dev-server_app-network' 
+                    def targetNetwork = 'local-dev-server_app-network'
                     def imageNameWithTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}-${env.BRANCH_NAME.replace('/', '-')}"
 
                     echo "Attempting to stop and remove existing application container: ${targetContainerName}"
@@ -114,7 +114,6 @@ pipeline {
                                            "-e APP_ENV=${env.APP_ENVIRONMENT} " +
                                            "-e API_URL=${env.APP_API_URL} " +
                                            "-e DB_HOST=${env.APP_DB_HOST} " +
-                                           "-p ${env.NGINX_EXTERNAL_PORT}:${env.NGINX_EXTERNAL_PORT} " +
                                            "${imageNameWithTag}"
 
                     sh dockerRunCommand
