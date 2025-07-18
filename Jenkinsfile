@@ -9,7 +9,7 @@ pipeline {
         APP_NAME = 'spring-hello-world-app-0.0.1-SNAPSHOT.jar'
 
         DEPLOY_PATH = '/opt/java-app'
-        JAVA_APP_PORT = '8080'
+        JAVA_APP_PORT = '8000'
     }
 
     stages {
