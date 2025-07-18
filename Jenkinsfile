@@ -6,7 +6,7 @@ pipeline {
         MVN_HOME = '/opt/maven'
         JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-arm64'
 
-        APP_NAME = 'spring-hello-world-app-0.0.1-SNAPSHOT.jar
+        APP_NAME = 'spring-hello-world-app-0.0.1-SNAPSHOT.jar'
 
         DEPLOY_PATH = '/opt/java-app'
         JAVA_APP_PORT = '8080'
