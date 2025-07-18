@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        MVN_HOME = '/usr/share/maven'
+        MVN_HOME = '/opt/maven'
         JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-arm64'
 
         APP_NAME = 'my-java-app.jar'
