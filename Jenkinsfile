@@ -16,9 +16,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    echo 'Checking out source code from SCM...'
-
-                    git branch: 'main', url: 'https://github.com/your-username/your-java-app-repo.git'
+                    echo "Checking out code from SCM defined in job configuration..."
+                    checkout scm 
                 }
             }
         }
